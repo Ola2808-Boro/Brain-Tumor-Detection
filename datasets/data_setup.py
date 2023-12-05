@@ -3,11 +3,30 @@ from pathlib import Path
 import glob
 import torchvision
 from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
 from torchdata.datapipes.iter import IterableWrapper
+import torchvision.transforms as transforms
 import re
 
-def preprocessing(image:str):
-     train_dataset=ImageFolder(root='Brain-Tumor-Detection/datasets/segmentation_dataset')
+def preprocessing():
+
+    BATCH_SIZE=32
+    transform =  transforms.Compose([
+            transforms.Resize([256,256]), 
+            transforms.ToTensor(),
+        ])
+    
+    #datasets
+    train_dataset=ImageFolder(root='Brain-Tumor-Detection/datasets/segmentation_dataset/train',transform=transform)
+    test_dataset=ImageFolder(root='Brain-Tumor-Detection/datasets/segmentation_dataset/test',transform=transform)
+
+    #dataloaders
+    train_dataloader=DataLoader(dataset=train_dataset,batch_size=BATCH_SIZE,shuffle=True)
+    test_dataloader=DataLoader(dataset=test_dataset,batch_size=BATCH_SIZE)
+
+    return train_dataloader,test_dataloader
+
+preprocessing()
 
 def create_dir(dir_name_main:str):
     if os.path.isdir(dir_name_main):
@@ -75,4 +94,4 @@ def create_dataset(paths:[],dir_name_main:str):
                                         os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/test/pred/{file}")
 
 
-create_dataset(paths=['Brain-Tumor-Detection/datasets/brain_tumor_dataset','Brain-Tumor-Detection/datasets/Brain_Tumor_Detection'],dir_name_main='segmentation_dataset')
+#create_dataset(paths=['Brain-Tumor-Detection/datasets/brain_tumor_dataset','Brain-Tumor-Detection/datasets/Brain_Tumor_Detection'],dir_name_main='segmentation_dataset')

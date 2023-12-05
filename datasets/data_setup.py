@@ -1,6 +1,13 @@
 import os
 from pathlib import Path
 import glob
+import torchvision
+from torchvision.datasets import ImageFolder
+from torchdata.datapipes.iter import IterableWrapper
+import re
+
+def preprocessing(image:str):
+     train_dataset=ImageFolder(root='Brain-Tumor-Detection/datasets/segmentation_dataset')
 
 def create_dir(dir_name_main:str):
     if os.path.isdir(dir_name_main):
@@ -8,12 +15,22 @@ def create_dir(dir_name_main:str):
     else:
         path=Path('Brain-Tumor-Detection/datasets/'+dir_name_main)
         os.makedirs(path,exist_ok=True)
-        path_no=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/no')
-        os.makedirs(path_no,exist_ok=True)
-        path_yes=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/yes')
-        os.makedirs(path_yes,exist_ok=True)
-        path_test=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/test')
-        os.makedirs(path_test,exist_ok=True)
+        
+        #train yes,bo,pred
+        path_train_no=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/train/no')
+        os.makedirs(path_train_no,exist_ok=True)
+        path_train_yes=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/train/yes')
+        os.makedirs(path_train_yes,exist_ok=True)
+        path_train_pred=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/train/pred')
+        os.makedirs(path_train_pred,exist_ok=True)
+
+        #test yes,bo,pred
+        path_test_no=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/test/no')
+        os.makedirs(path_test_no,exist_ok=True)
+        path_test_yes=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/test/yes')
+        os.makedirs(path_test_yes,exist_ok=True)
+        path_train_pred=Path('Brain-Tumor-Detection/datasets/'+dir_name_main+'/test/pred')
+        os.makedirs(path_train_pred,exist_ok=True)
         print('Creating directory')
 
 
@@ -23,21 +40,39 @@ def create_dataset(paths:[],dir_name_main:str):
         print(path)
         for subdir, dirs, files in os.walk(path):
             for dir_name in dirs:
+                print(dir_name)
                 if dir_name=='no':
                         print('if',dir_name)
                         for subdir, dirs, files in os.walk(path+'/'+dir_name):
-                            print('Files',subdir, dirs, files)
+                            #print('Files',subdir, dirs, files)
+                            dp = IterableWrapper(range(len(files)))
+                            train, test = dp.random_split(total_length=len(files), weights={"train": 0.8, "test": 0.2}, seed=42)
+                            print('Train',list(train))
                             for file in files:
                                 print('Image',file)
-                                os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/no/{file}")
-                elif dir=='yes':
+                                #print('Condition',re.findall('\d+',file)!=0 and int(re.findall('\d+',file)[0]) in train)
+                                if len(re.findall('\d+',file))!=0 and int(re.findall('\d+',file)[0]) in train:
+                                    os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/train/no/{file}")
+                                else:
+                                    os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/test/no/{file}")
+                elif dir_name=='yes':
                         for subdir, dirs, files in os.walk(path+'/'+dir_name):
+                                dp = IterableWrapper(range(len(files)))
+                                train, test = dp.random_split(total_length=len(files), weights={"train": 0.8, "test": 0.2}, seed=42)
                                 for file in files:
-                                    os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/yes/{file}")
-                elif dir=='pred':
+                                    if len(re.findall('\d+',file))!=0 and int(re.findall('\d+',file)[0]) in train:
+                                        os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/train/yes/{file}")
+                                    else:
+                                        os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/test/yes/{file}")
+                elif dir_name=='pred':
                         for subdir, dirs, files in os.walk(path+'/'+dir_name):
+                                dp = IterableWrapper(range(len(files)))
+                                train, test = dp.random_split(total_length=len(files), weights={"train": 0.8, "test": 0.2}, seed=42)
                                 for file in files:
-                                    os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/test/{file}")
+                                    if len(re.findall('\d+',file))!=0 and int(re.findall('\d+',file)[0]) in train:
+                                        os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/train/pred/{file}")
+                                    else:
+                                        os.replace(f"{path}/{dir_name}/{file}",f"Brain-Tumor-Detection/datasets/{dir_name_main}/test/pred/{file}")
 
 
 create_dataset(paths=['Brain-Tumor-Detection/datasets/brain_tumor_dataset','Brain-Tumor-Detection/datasets/Brain_Tumor_Detection'],dir_name_main='segmentation_dataset')
